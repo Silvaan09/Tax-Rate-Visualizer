@@ -1,0 +1,48 @@
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f7f7f5;
+  color: #1f2937;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  transition: 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-1px);
+}
+
+.input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: white;
+  font-size: 14px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #8b5e3c;
+  box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.08);
+}
+
+.button-primary {
+  background: #1f2937;
+  color: white;
+  border-radius: 14px;
+  padding: 14px 18px;
+  transition: 0.2s;
+  font-weight: 500;
+}
+
+.button-primary:hover {
+  opacity: 0.92;
+}
+
+.muted {
+  color: #6b7280;
+}

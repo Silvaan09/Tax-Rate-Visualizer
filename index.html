@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+
+  <meta charset="UTF-8" />
+  <meta name="theme-color" content="#1f2937">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+  <!-- PWA / iPhone -->
+  <meta name="theme-color" content="#1f2937">
+
+  <meta
+  name="apple-mobile-web-app-capable"
+  content="yes"
+  >
+
+  <meta
+  name="apple-mobile-web-app-status-bar-style"
+  content="default"
+  >
+
+  <meta
+  name="apple-mobile-web-app-title"
+  content="Steuervergleich"
+  >
+
+  <link
+  rel="apple-touch-icon"
+  href="assets/logo.png"
+  >
+  <link rel="manifest" href="manifest.json">
+
+  <title>Steuervergleich</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Vue -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <!-- ECharts -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+
+</head>
+
+<body>
+
+<div id="app" class="min-h-screen">
+
+  <!-- HEADER -->
+  <header class="max-w-7xl mx-auto px-6 py-10">
+
+    <div class="flex items-center justify-between">
+
+      <div>
+
+        <h1 class="text-2xl font-semibold tracking-tight">
+          Steuervergleich
+        </h1>
+
+        <p class="muted mt-1 text-sm">
+          Szenarien vergleichen und visualisieren
+        </p>
+
+      </div>
+
+      <div class="text-sm muted">
+        Treuhand Tool
+      </div>
+
+    </div>
+
+  </header>
+
+  <!-- MAIN -->
+  <main class="max-w-7xl mx-auto px-6 pb-12">
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <!-- LEFT PANEL -->
+      <div class="card p-6 lg:col-span-1 h-fit">
+
+        <h2 class="text-lg font-medium mb-6">
+          Eingaben
+        </h2>
+
+        <div class="space-y-5">
+
+          <!-- Scenario Name -->
+          <div>
+
+            <label class="block text-sm mb-2 muted">
+              Szenario Name
+            </label>
+
+            <input
+              v-model="form.scenarioName"
+              type="text"
+              class="input"
+              placeholder="z.B. Familie Zug"
+            />
+
+          </div>
+
+          <!-- Canton -->
+          <div>
+
+            <label class="block text-sm mb-2 muted">
+              Kanton
+            </label>
+
+            <select
+              v-model="form.canton"
+              class="input"
+            >
+
+              <option
+                v-for="canton in sortedCantons"
+                :key="canton"
+              >
+                {{ canton }}
+              </option>
+
+            </select>
+
+          </div>
+
+          <!-- Income -->
+          <div>
+
+            <label class="block text-sm mb-2 muted">
+              Einkommen (CHF)
+            </label>
+
+            <input
+              v-model.number="form.income"
+              type="number"
+              class="input"
+              placeholder="120000"
+            />
+
+          </div>
+
+          <!-- Married -->
+          <div class="flex items-center justify-between">
+
+            <span class="text-sm muted">
+              Verheiratet
+            </span>
+
+            <input
+              type="checkbox"
+              v-model="form.married"
+              class="w-5 h-5"
+            />
+
+          </div>
+
+          <!-- Children -->
+          <div>
+
+            <label class="block text-sm mb-2 muted">
+              Kinder
+            </label>
+
+            <input
+              v-model.number="form.children"
+              type="number"
+              min="0"
+              class="input"
+            />
+
+          </div>
+
+          <!-- Religion -->
+          <div>
+
+            <label class="block text-sm mb-2 muted">
+              Kirchensteuer
+            </label>
+
+            <select
+              v-model="form.religion"
+              class="input"
+            >
+
+              <option>Keine</option>
+              <option>Katholisch</option>
+              <option>Reformiert</option>
+
+            </select>
+
+          </div>
+
+          <!-- Live Preview -->
+          <div class="border border-gray-200 rounded-2xl p-5 bg-gray-50">
+
+            <div class="muted text-sm">
+              Aktuelle Vorschau
+            </div>
+
+            <div class="mt-3 text-3xl font-semibold">
+              {{ currentRate.toFixed(1) }}%
+            </div>
+
+            <div class="mt-2 muted text-sm">
+              CHF {{ currentTaxes.toLocaleString() }}
+            </div>
+
+          </div>
+
+          <!-- Add Scenario -->
+          <button
+            @click="calculateScenario"
+            class="button-primary w-full mt-4"
+          >
+            Szenario hinzufügen
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- RIGHT SIDE -->
+      <div class="lg:col-span-2 space-y-6">
+
+        <!-- RESULT CARD -->
+        <div class="card p-6">
+
+          <div class="flex items-start justify-between">
+
+            <div>
+
+              <h2 class="text-lg font-medium">
+                Aktuelles Ergebnis
+              </h2>
+
+              <p class="muted text-sm mt-1">
+                Geschätzte Steuerbelastung
+              </p>
+
+            </div>
+
+            <div class="text-right">
+
+              <div class="text-3xl font-semibold">
+                {{ currentRate.toFixed(1) }}%
+              </div>
+
+              <div class="muted text-sm mt-1">
+                Effektiver Steuersatz
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="mt-8 grid grid-cols-2 gap-4">
+
+            <!-- Tax Amount -->
+            <div class="border border-gray-200 rounded-2xl p-5">
+
+              <div class="muted text-sm">
+                Geschätzte Steuern
+              </div>
+
+              <div class="text-2xl font-semibold mt-2">
+                CHF {{ currentTaxes.toLocaleString() }}
+              </div>
+
+            </div>
+
+            <!-- Income -->
+            <div class="border border-gray-200 rounded-2xl p-5">
+
+              <div class="muted text-sm">
+                Einkommen
+              </div>
+
+              <div class="text-2xl font-semibold mt-2">
+                CHF {{ form.income.toLocaleString() }}
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="flex gap-2 mb-6">
+
+            <button
+                @click="chartMode = 'rate'; updateChart()"
+                :class="chartMode === 'rate'
+                ? 'button-primary'
+                : 'border border-gray-300 rounded-xl px-4 py-2'"
+            >
+                Steuersatz %
+            </button>
+
+            <button
+                @click="chartMode = 'taxes'; updateChart()"
+                :class="chartMode === 'taxes'
+                ? 'button-primary'
+                : 'border border-gray-300 rounded-xl px-4 py-2'"
+            >
+                Steuerbetrag CHF
+            </button>
+
+        </div>
+        <!-- CHART -->
+        <div class="card p-6">
+
+          <div class="flex items-center justify-between mb-6">
+
+            <div>
+
+              <h2 class="text-lg font-medium">
+                Szenarienvergleich
+              </h2>
+
+              <p class="muted text-sm mt-1">
+                Effektive Steuerbelastung
+              </p>
+
+            </div>
+
+          </div>
+
+          <!-- Chart -->
+          <div
+            id="chart"
+            style="height: 420px;"
+          ></div>
+
+          <!-- Scenario List -->
+          <div class="mt-6 space-y-3">
+
+            <div
+                v-for="(scenario, index) in scenarios"
+                :key="scenario.id"
+                class="border border-gray-200 rounded-2xl p-5 bg-white"
+                >
+
+                <div class="flex items-start justify-between">
+
+                    <div>
+
+                    <div class="font-medium text-lg">
+                        {{ scenario.name }}
+                    </div>
+
+                    <div class="text-sm muted mt-1">
+                        {{ scenario.canton }}
+                    </div>
+
+                    </div>
+
+                    <button
+                    @click="removeScenario(index)"
+                    class="text-sm text-red-500"
+                    >
+                    Entfernen
+                    </button>
+
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mt-5">
+
+                    <div>
+                    <div class="muted text-xs">
+                        Einkommen
+                    </div>
+
+                    <div class="font-medium">
+                        CHF {{ scenario.income.toLocaleString() }}
+                    </div>
+                    </div>
+
+                    <div>
+                    <div class="muted text-xs">
+                        Kinder
+                    </div>
+
+                    <div class="font-medium">
+                        {{ scenario.children }}
+                    </div>
+                    </div>
+
+                    <div>
+                    <div class="muted text-xs">
+                        Steuersatz
+                    </div>
+
+                    <div class="font-medium">
+                        {{ scenario.rate.toFixed(1) }}%
+                    </div>
+                    </div>
+
+                    <div>
+                    <div class="muted text-xs">
+                        Steuerbetrag
+                    </div>
+
+                    <div class="font-medium">
+                        CHF {{ scenario.taxes.toLocaleString() }}
+                    </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<!-- Data -->
+<script src="data/taxData.js"></script>
+
+<!-- App -->
+<script src="app.js"></script>
+
+<script>
+
+if ('serviceWorker' in navigator) {
+
+  navigator.serviceWorker.register(
+    './service-worker.js'
+  )
+
+}
+
+</script>
+
+</body>
+
+</html>
