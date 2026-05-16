@@ -246,30 +246,19 @@ createApp({
 
   watch: {
 
-    'form.canton'(newCanton) {
-
-        const currentName =
-            this.form.scenarioName
-
-        const knownCantons =
-            this.sortedCantons
-
-        // Only auto-update if user
-        // has not customized manually
-
-        const isDefaultName =
-            knownCantons.some(canton =>
-            currentName === `${canton} Szenario`
-            )
-
-        if (isDefaultName) {
-
-            this.form.scenarioName =
-            `${newCanton} Szenario`
-
-        }
-
-    },
+    'form.canton'(newCanton, oldCanton) {
+      const currentName = this.form.scenarioName
+      
+      // Escape special regex characters in the canton name
+      const escapedOld = oldCanton.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      
+      // Match old canton as a whole word (case-insensitive)
+      const regex = new RegExp(`\\b${escapedOld}\\b`, 'i')
+      
+      if (regex.test(currentName)) {
+          this.form.scenarioName = currentName.replace(regex, newCanton)
+      }
+  },
 
     form: {
 
